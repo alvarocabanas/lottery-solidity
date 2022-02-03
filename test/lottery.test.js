@@ -75,7 +75,6 @@ describe('Lottery Contract', () => {
         }
     })
 
-
     it('it requires the manager to pick a winner', async () => {
         try {
             await lottery.methods.pickWinner().send({
@@ -85,5 +84,57 @@ describe('Lottery Contract', () => {
         } catch(err) {
             assert(err)
         }
+    })
+
+    it('it sends money to the winner and resets players', async () => {
+        const initialBalance = await web3.eth.getBalance(accounts[1])
+        await lottery.methods.enter().send({
+            from: accounts[1],
+            value: Web3.utils.toWei('0.02', 'ether'),
+        });
+
+        let players = await lottery.methods.getPlayers().call({
+            from: accounts[0],
+        });
+
+        assert.equal(1, players.length)
+
+        await lottery.methods.enter().send({
+            from: accounts[1],
+            value: Web3.utils.toWei('0.02', 'ether'),
+        });
+
+        await lottery.methods.enter().send({
+            from: accounts[1],
+            value: Web3.utils.toWei('0.02', 'ether'),
+        });
+
+        const newBalance = await web3.eth.getBalance(accounts[1])
+        const difference = initialBalance - newBalance;
+
+        // We compare with a bit more for the gas
+        assert(difference > web3.utils.toWei('0.06') && difference < web3.utils.toWei('0.061'));
+
+        let lotteryBalance = await web3.eth.getBalance(lottery.options.address);
+        assert.equal(web3.utils.toWei('0.06'), lotteryBalance);
+
+        await lottery.methods.pickWinner().send({
+            from: accounts[0],
+        });
+
+        const finalBalance = await web3.eth.getBalance(accounts[1])
+        const finalDifference = initialBalance - finalBalance;
+
+        // We have returned the money except the gas
+        assert(finalDifference < web3.utils.toWei('0.001'));
+
+        players = await lottery.methods.getPlayers().call({
+            from: accounts[0],
+        });
+        assert.equal(0, players.length);
+
+        lotteryBalance = await web3.eth.getBalance(lottery.options.address);
+        assert.equal(0, lotteryBalance);
+
     })
 })
