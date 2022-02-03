@@ -2,6 +2,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider');
 const Web3 = require('web3');
 const { interface, bytecode } = require('./compile');
 
+// This mnemonic is from a test account that will never have real money
 const provider = new HDWalletProvider(
   'acoustic glow royal bread erosion guilt lemon lake jelly couch rug chimney',
     'https://rinkeby.infura.io/v3/81ba21ec8cf24c64873d06aba34f383d'
